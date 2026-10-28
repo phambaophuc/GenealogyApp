@@ -1,111 +1,154 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap");
+@import "./styles/ornaments.css";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@import "tailwindcss";
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --background: 40 38% 92%;
+    --foreground: 25 26% 14%;
+    --card: 42 46% 97%;
+    --card-foreground: 25 26% 14%;
+    --popover: 42 46% 98%;
+    --popover-foreground: 25 26% 14%;
+
+    --primary: 6 66% 40%;
+    --primary-foreground: 42 60% 96%;
+
+    --secondary: 28 30% 86%;
+    --secondary-foreground: 25 30% 18%;
+    --muted: 36 24% 86%;
+    --muted-foreground: 28 16% 36%;
+
+    --accent: 40 62% 50%;
+    --accent-foreground: 26 42% 12%;
+
+    --destructive: 0 64% 42%;
+    --destructive-foreground: 42 60% 96%;
+    --border: 30 26% 72%;
+    --input: 30 26% 72%;
+    --ring: 40 62% 50%;
+    --radius: 0.75rem;
+
+    --paper: 42 46% 97%;
+    --ink: 25 26% 14%;
+    --jade: 168 38% 32%;
+    --bronze: 40 62% 50%;
+    --gold: 44 66% 56%;
+    --seal: 6 66% 40%;
+    --wood: 22 34% 24%;
+    --wood-light: 28 30% 42%;
+
+    --gen-1: 8 52% 36%;
+    --gen-2: 26 50% 40%;
+    --gen-3: 42 58% 44%;
+    --gen-4: 165 34% 33%;
+    --gen-5: 205 30% 38%;
+
+    --font-heading: "Playfair Display", Georgia, "Times New Roman", serif;
+    --font-display: "Playfair Display", Georgia, serif;
+    --font-body:
+      "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    --chart-1: 6 66% 44%;
+    --chart-2: 168 38% 36%;
+    --chart-3: 40 62% 50%;
+    --chart-4: 25 30% 32%;
+    --chart-5: 205 30% 42%;
+
+    --sidebar-background: 40 34% 95%;
+    --sidebar-foreground: 25 26% 20%;
+    --sidebar-primary: 6 66% 40%;
+    --sidebar-primary-foreground: 42 60% 96%;
+    --sidebar-accent: 36 30% 88%;
+    --sidebar-accent-foreground: 25 26% 18%;
+    --sidebar-border: 30 26% 78%;
+    --sidebar-ring: 40 62% 50%;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  .dark {
+    --background: 24 18% 9%;
+    --foreground: 40 30% 90%;
+    --card: 24 16% 13%;
+    --card-foreground: 40 30% 90%;
+    --popover: 24 16% 14%;
+    --popover-foreground: 40 30% 90%;
+    --primary: 6 60% 52%;
+    --primary-foreground: 40 40% 96%;
+    --secondary: 26 14% 20%;
+    --secondary-foreground: 40 30% 90%;
+    --muted: 26 14% 20%;
+    --muted-foreground: 40 16% 68%;
+    --accent: 40 60% 58%;
+    --accent-foreground: 24 40% 12%;
+    --destructive: 0 55% 45%;
+    --destructive-foreground: 40 40% 96%;
+    --border: 26 14% 26%;
+    --input: 26 14% 26%;
+    --ring: 40 60% 58%;
+
+    --paper: 24 16% 13%;
+    --ink: 40 30% 90%;
+    --jade: 168 32% 55%;
+    --bronze: 40 60% 58%;
+    --gold: 44 62% 62%;
+    --seal: 6 60% 52%;
+    --wood: 24 24% 7%;
+    --wood-light: 28 16% 26%;
+
+    --gen-1: 8 55% 58%;
+    --gen-2: 26 55% 62%;
+    --gen-3: 42 60% 62%;
+    --gen-4: 165 38% 55%;
+    --gen-5: 205 40% 62%;
+
+    --chart-1: 6 60% 56%;
+    --chart-2: 168 34% 52%;
+    --chart-3: 40 60% 58%;
+    --chart-4: 30 30% 70%;
+    --chart-5: 205 36% 62%;
+
+    --sidebar-background: 24 16% 12%;
+    --sidebar-foreground: 40 26% 88%;
+    --sidebar-primary: 6 60% 52%;
+    --sidebar-primary-foreground: 40 40% 96%;
+    --sidebar-accent: 26 14% 19%;
+    --sidebar-accent-foreground: 40 26% 88%;
+    --sidebar-border: 26 14% 24%;
+    --sidebar-ring: 40 60% 58%;
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+@layer base {
+  html {
+    font-size: 17px;
+    -webkit-text-size-adjust: 100%;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-p {
-  margin: 0;
-}
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+  body {
+    @apply bg-background text-foreground font-body;
+    background-image: var(--orn-noise);
+  }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+    letter-spacing: 0.01em;
+  }
+
+  :focus-visible {
+    outline: 3px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.35);
+  }
 }
