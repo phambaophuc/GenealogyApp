@@ -17,7 +17,7 @@ export const VILLAGE_DOORS: VillageDoor[] = [
     adminOnly: false,
     icon: TreePine,
     accentClass: "text-jade",
-    to: "/cay",
+    to: "/cay-pha-he",
     upcoming: "Cây phả hệ đã mở — bấm để xem góc nhìn của mình.",
   },
   {

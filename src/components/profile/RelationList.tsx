@@ -1,7 +1,8 @@
-import { Link, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { personRoleLabel } from "../../lib/format";
 import type { Person } from "../../services/types";
 import PersonAvatar from "../people/PersonAvatar";
+import { Link } from "react-router-dom";
 
 export default function RelationList({
   title,

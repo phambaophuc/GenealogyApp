@@ -51,7 +51,7 @@ export default function TreePage() {
     window.history.replaceState(
       null,
       "",
-      centerId ? `/cay?tam=${centerId}` : "/cay",
+      centerId ? `/cay-pha-he?tam=${centerId}` : "/cay-pha-he",
     );
   }, [centerId]);
 
