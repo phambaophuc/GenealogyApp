@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Gate from "./pages/Gate";
 import VillageMap from "./pages/VillageMap";
 import AppShell from "./components/shell/AppShell";
+import TreePage from "./pages/TreePage";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Route path="/" element={<Gate />} />
         <Route element={<AppShell />}>
           <Route path="/ban-do" element={<VillageMap />} />
+          <Route path="/cay" element={<TreePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
