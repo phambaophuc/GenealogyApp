@@ -1,0 +1,77 @@
+import {
+  BookOpen,
+  DoorOpen,
+  Landmark,
+  Mail,
+  MessagesSquare,
+  TreePine,
+} from "lucide-react";
+import type { VillageDoor } from "../../services/types";
+
+export const VILLAGE_DOORS: VillageDoor[] = [
+  {
+    id: "cay-dai-thu",
+    name: "Cây Đại Thụ",
+    desc: "Góc nhìn quanh một người: tổ tiên ở trên, con cháu ở dưới.",
+    stage: 2,
+    adminOnly: false,
+    icon: TreePine,
+    accentClass: "text-jade",
+    to: "/cay",
+    upcoming: "Cây phả hệ đã mở — bấm để xem góc nhìn của mình.",
+  },
+  {
+    id: "cong-lang",
+    name: "Cổng Làng",
+    desc: "Tìm kiếm người trong họ, gõ có dấu hay không dấu đều ra.",
+    stage: 3,
+    adminOnly: false,
+    icon: DoorOpen,
+    accentClass: "text-bronze",
+    to: "/tim-kiem",
+    upcoming: "Ô tìm kiếm đã mở — lọc được theo đời, theo bên họ.",
+  },
+  {
+    id: "sanh-xung-ho",
+    name: "Sảnh Xưng Hô",
+    desc: "Chọn hai người, xem cách gọi nhau trong họ.",
+    stage: 3,
+    adminOnly: false,
+    icon: MessagesSquare,
+    accentClass: "text-seal",
+    to: "/tra-xung-ho",
+    upcoming: "Sảnh xưng hô đã mở — chọn hai người để xem cách gọi nhau.",
+  },
+  {
+    id: "tu-duong",
+    name: "Từ Đường",
+    desc: "Bài vị các cụ, ngày giỗ âm lịch và đếm ngược ngày giỗ gần nhất.",
+    stage: 4,
+    adminOnly: false,
+    icon: Landmark,
+    accentClass: "text-gold",
+    upcoming: "Bàn thờ các cụ và lịch giỗ âm lịch sẽ mở ở Giai đoạn 4.",
+  },
+  {
+    id: "kho-sach",
+    name: "Kho Sách",
+    desc: "Sao lưu và xuất dữ liệu phả hệ (JSON, CSV).",
+    stage: 4,
+    adminOnly: true,
+    icon: BookOpen,
+    accentClass: "text-wood",
+    upcoming:
+      "Kho Sách thuộc khu vực quản trị và sẽ mở ở Giai đoạn 4 — cửa này chỉ hiện khi bật chế độ Quản trị.",
+  },
+  {
+    id: "hom-thu",
+    name: "Hòm Thư",
+    desc: "Gửi ghi chú báo sai sót cho ban quản trị dòng họ.",
+    stage: 4,
+    adminOnly: false,
+    icon: Mail,
+    accentClass: "text-jade",
+    upcoming:
+      "Hòm Thư nhận ghi chú báo sai và danh sách thư đã xử lý sẽ mở ở Giai đoạn 4.",
+  },
+];

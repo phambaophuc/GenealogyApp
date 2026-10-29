@@ -127,19 +127,13 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  * {
-    @apply border-border outline-ring/50;
-  }
-
   body {
-    @apply bg-background text-foreground font-body;
     background-image: var(--orn-noise);
   }
 
   h1,
   h2,
   h3 {
-    @apply font-heading;
     letter-spacing: 0.01em;
   }
 
