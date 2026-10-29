@@ -91,7 +91,7 @@ export default function PersonProfile() {
         (a.birthOrder ?? 99) - (b.birthOrder ?? 99) ||
         a.fullName.localeCompare(b.fullName),
     );
-  console.log(mother);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">

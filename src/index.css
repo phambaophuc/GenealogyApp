@@ -3,37 +3,109 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
+  /* Colors */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
+
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
+
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
+
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
 
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
+
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
 
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
+
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
-  --font-heading: "Playfair Display", Georgia, serif;
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-paper: hsl(var(--paper));
+  --color-ink: hsl(var(--ink));
+  --color-jade: hsl(var(--jade));
+  --color-bronze: hsl(var(--bronze));
+  --color-gold: hsl(var(--gold));
+  --color-seal: hsl(var(--seal));
+  --color-wood: hsl(var(--wood));
+  --color-wood-light: hsl(var(--wood-light));
+
+  --color-gen-1: hsl(var(--gen-1));
+  --color-gen-2: hsl(var(--gen-2));
+  --color-gen-3: hsl(var(--gen-3));
+  --color-gen-4: hsl(var(--gen-4));
+  --color-gen-5: hsl(var(--gen-5));
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* Fonts */
+  --font-body:
+    "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-display: "Playfair Display", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Border radius */
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Accordion animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+  }
 }
 
 @layer base {
   :root {
+    color-scheme: light;
+
     --background: 40 38% 92%;
     --foreground: 25 26% 14%;
     --card: 42 46% 97%;
@@ -54,6 +126,7 @@
 
     --destructive: 0 64% 42%;
     --destructive-foreground: 42 60% 96%;
+
     --border: 30 26% 72%;
     --input: 30 26% 72%;
     --ring: 40 62% 50%;
@@ -74,13 +147,6 @@
     --gen-4: 165 34% 33%;
     --gen-5: 205 30% 38%;
 
-    --font-heading: "Playfair Display", Georgia, "Times New Roman", serif;
-    --font-display: "Playfair Display", Georgia, serif;
-    --font-body:
-      "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-mono:
-      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
     --chart-1: 6 66% 44%;
     --chart-2: 168 38% 36%;
     --chart-3: 40 62% 50%;
@@ -98,22 +164,27 @@
   }
 
   .dark {
+    color-scheme: dark;
+
     --background: 24 18% 9%;
     --foreground: 40 30% 90%;
     --card: 24 16% 13%;
     --card-foreground: 40 30% 90%;
     --popover: 24 16% 14%;
     --popover-foreground: 40 30% 90%;
+
     --primary: 6 60% 52%;
     --primary-foreground: 40 40% 96%;
     --secondary: 26 14% 20%;
     --secondary-foreground: 40 30% 90%;
     --muted: 26 14% 20%;
     --muted-foreground: 40 16% 68%;
+
     --accent: 40 60% 58%;
     --accent-foreground: 24 40% 12%;
     --destructive: 0 55% 45%;
     --destructive-foreground: 40 40% 96%;
+
     --border: 26 14% 26%;
     --input: 26 14% 26%;
     --ring: 40 60% 58%;
@@ -148,9 +219,7 @@
     --sidebar-border: 26 14% 24%;
     --sidebar-ring: 40 60% 58%;
   }
-}
 
-@layer base {
   html {
     font-size: 17px;
     -webkit-text-size-adjust: 100%;
