@@ -18,20 +18,8 @@ export function personInitial(fullName: string): string {
 }
 
 export function personRoleLabel(person: Person): string {
-  if (person.lineage === "OUTSIDE") return "Bên ngoại dòng họ";
-
   const parts = [`Đời ${person.generation}`];
-  if (person.lineage === "SPOUSE") {
-    parts.push(
-      person.gender === "FEMALE"
-        ? "dâu"
-        : person.gender === "MALE"
-          ? "rể"
-          : "ngoài họ",
-    );
-  } else if (person.birthOrder) {
-    parts.push(`thứ ${person.birthOrder}`);
-  }
+  if (person.birthOrder) parts.push(`thứ ${person.birthOrder}`);
   return parts.join(" · ");
 }
 

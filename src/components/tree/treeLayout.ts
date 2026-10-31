@@ -29,9 +29,8 @@ export function childrenOfUnit(
   return people
     .filter(
       (child) =>
-        child.isBloodLine &&
-        ((child.fatherId && unitIds.has(child.fatherId)) ||
-          (child.motherId && unitIds.has(child.motherId))),
+        (child.fatherId && unitIds.has(child.fatherId)) ||
+        (child.motherId && unitIds.has(child.motherId)),
     )
     .sort(
       (a, b) =>
@@ -93,8 +92,18 @@ export function buildPositions(people: Person[]): Positions {
     return { first, last };
   };
 
+  const rootUnits = new Set<string>();
   people
-    .filter((person) => person.generation === 1 && person.isBloodLine)
+    .filter((person) => person.generation === 1)
+    .filter((person) => {
+      const key = unitOf(person, byId)
+        .map((member) => member.id)
+        .sort()
+        .join("|");
+      if (rootUnits.has(key)) return false;
+      rootUnits.add(key);
+      return true;
+    })
     .forEach(placeUnit);
 
   people
@@ -149,62 +158,69 @@ export function buildGraph({
 
   const edges: Edge[] = [];
 
-  people
-    .filter((person) => person.isBloodLine)
-    .forEach((person) => {
-      const unit = unitOf(person, byId);
-      for (let index = 0; index < unit.length - 1; index += 1) {
-        const left = unit[index];
-        const right = unit[index + 1];
-        if (hidden.has(left.id) || hidden.has(right.id)) continue;
-        edges.push({
-          id: `vo-chong-${left.id}-${right.id}`,
-          source: left.id,
-          target: right.id,
-          sourceHandle: "right",
-          targetHandle: "left",
-          type: "straight",
-          style: {
-            stroke: "hsl(var(--seal))",
-            strokeWidth: 1.6,
-            strokeDasharray: "5 4",
-          },
-        });
-      }
-    });
+  const seenUnits = new Set<string>();
+  const unitLeaders = people.filter((person) => {
+    const key = unitOf(person, byId)
+      .map((member) => member.id)
+      .sort()
+      .join("|");
+    if (seenUnits.has(key)) return false;
+    seenUnits.add(key);
+    return true;
+  });
 
-  people
-    .filter((person) => person.isBloodLine)
-    .forEach((person) => {
-      const unitIds = new Set(unitOf(person, byId).map((member) => member.id));
-      childrenOfUnit(person, people, byId).forEach((child) => {
-        if (hidden.has(person.id) || hidden.has(child.id)) return;
-        const childX = positions[child.id]?.x ?? 0;
-        const candidates = [child.fatherId, child.motherId]
-          .filter(
-            (id): id is string =>
-              Boolean(id) &&
-              unitIds.has(id as string) &&
-              Boolean(positions[id as string]),
-          )
-          .sort(
-            (a, b) =>
-              Math.abs(positions[a].x - childX) -
-              Math.abs(positions[b].x - childX),
-          );
-        const source = candidates[0] ?? person.id;
+  unitLeaders.forEach((person) => {
+    const unit = unitOf(person, byId);
+    for (let index = 0; index < unit.length - 1; index += 1) {
+      const left = unit[index];
+      const right = unit[index + 1];
+      if (hidden.has(left.id) || hidden.has(right.id)) continue;
+      edges.push({
+        id: `vo-chong-${left.id}-${right.id}`,
+        source: left.id,
+        target: right.id,
+        sourceHandle: "right",
+        targetHandle: "left",
+        type: "straight",
+        style: {
+          stroke: "hsl(var(--seal))",
+          strokeWidth: 1.6,
+          strokeDasharray: "5 4",
+        },
+      });
+    }
+  });
 
-        edges.push({
-          id: `con-${source}-${child.id}`,
-          source,
-          target: child.id,
-          sourceHandle: "bottom",
-          targetHandle: "top",
-          type: "smoothstep",
-          style: { stroke: "hsl(var(--wood-light))", strokeWidth: 1.8 },
-        });
+  unitLeaders.forEach((person) => {
+    const unitIds = new Set(unitOf(person, byId).map((member) => member.id));
+    childrenOfUnit(person, people, byId).forEach((child) => {
+      if (hidden.has(person.id) || hidden.has(child.id)) return;
+      const childX = positions[child.id]?.x ?? 0;
+      const candidates = [child.fatherId, child.motherId]
+        .filter(
+          (id): id is string =>
+            Boolean(id) &&
+            unitIds.has(id as string) &&
+            Boolean(positions[id as string]),
+        )
+        .sort(
+          (a, b) =>
+            Math.abs(positions[a].x - childX) -
+            Math.abs(positions[b].x - childX),
+        );
+      const source = candidates[0] ?? person.id;
+
+      edges.push({
+        id: `con-${source}-${child.id}`,
+        source,
+        target: child.id,
+        sourceHandle: "bottom",
+        targetHandle: "top",
+        type: "smoothstep",
+        style: { stroke: "hsl(var(--wood-light))", strokeWidth: 1.8 },
       });
     });
+  });
 
   return { nodes, edges };
 }

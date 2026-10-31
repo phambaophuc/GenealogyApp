@@ -179,17 +179,15 @@ export function buildFocusGraph(
       kind: "marriage",
     });
 
-    if (spouse.lineage === "OUTSIDE") {
-      const outerParent =
-        [spouse.fatherId, spouse.motherId]
-          .map((id) => (id ? (ctx.byId.get(id) ?? null) : null))
-          .find((item): item is Person => Boolean(item)) ?? null;
-      const card = cards[cards.length - 1];
-      if (outerParent) {
-        card.note = `Con nhà ${outerParent.fullName}`;
-        card.actionId = outerParent.id;
-        card.actionLabel = "Sang nhánh ngoại";
-      }
+    const outerParent =
+      [spouse.fatherId, spouse.motherId]
+        .map((id) => (id ? (ctx.byId.get(id) ?? null) : null))
+        .find((item): item is Person => Boolean(item)) ?? null;
+    const card = cards[cards.length - 1];
+    if (outerParent) {
+      card.note = `Con nhà ${outerParent.fullName}`;
+      card.actionId = outerParent.id;
+      card.actionLabel = "Sang nhánh ngoại";
     }
   });
 

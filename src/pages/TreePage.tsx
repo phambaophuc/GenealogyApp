@@ -5,7 +5,7 @@ import FocusTree from "../components/focus/FocusTree";
 import PaperPanel from "../components/ornaments/PaperPanel";
 import PersonSearch from "../components/search/PersonSearch";
 import FamilyTree from "../components/tree/FamilyTree";
-import { getPeople, getClanPeople, getDemoUserPerson } from "../services/api";
+import { getPeople, getClanPeople, toErrorMessage } from "../services/api";
 import type { Person } from "../services/types";
 
 const readTarget = () => new URLSearchParams(window.location.search).get("tam");
@@ -13,19 +13,18 @@ const readTarget = () => new URLSearchParams(window.location.search).get("tam");
 export default function TreePage() {
   const [people, setPeople] = useState<Person[] | null>(null);
   const [clanPeople, setClanPeople] = useState<Person[] | null>(null);
-  const [myPerson, setMyPerson] = useState<Person | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [trail, setTrail] = useState<string[]>([]);
   const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     let alive = true;
 
-    Promise.all([getPeople(), getClanPeople(), getDemoUserPerson()]).then(
-      ([list, clan, me]) => {
+    Promise.all([getPeople(), getClanPeople()]).then(
+      ([list, clan]) => {
         if (!alive) return;
         setPeople(list);
         setClanPeople(clan);
-        setMyPerson(me);
 
         const target = readTarget();
         const found = target
@@ -33,6 +32,10 @@ export default function TreePage() {
           : undefined;
         setTrail(found ? [found.id] : []);
         setCursor(0);
+      },
+      (loadError: unknown) => {
+        if (!alive) return;
+        setError(toErrorMessage(loadError, "Không tải được cây phả hệ."));
       },
     );
 
@@ -96,13 +99,18 @@ export default function TreePage() {
         </p>
       </PaperPanel>
 
-      {people ? (
+      {error ? (
+        <PaperPanel className="p-8 text-center">
+          <p className="font-heading text-xl">Không mở được cây gia phả</p>
+          <p className="mt-2 text-base text-muted-foreground">{error}</p>
+        </PaperPanel>
+      ) : people ? (
         center ? (
           <PaperPanel className="p-3 sm:p-4">
             <FocusTree
               center={center}
               people={people}
-              myPerson={myPerson}
+              myPerson={null}
               canBack={cursor > 0}
               canForward={cursor < trail.length - 1}
               onBack={() => setCursor((previous) => Math.max(0, previous - 1))}

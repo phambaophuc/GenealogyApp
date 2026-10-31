@@ -50,7 +50,6 @@ export default function FamilyTree({ people }: { people: Person[] }) {
       people
         .filter(
           (person) =>
-            person.isBloodLine &&
             person.generation > 1 &&
             descendantsOf(person.id, people).length > 0,
         )

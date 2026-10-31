@@ -21,11 +21,18 @@ export default function DailyMissions() {
   useEffect(() => {
     let alive = true;
 
-    getTodayMissions().then((list) => {
-      if (alive) {
-        setMissions(list);
-      }
-    });
+    getTodayMissions().then(
+      (list) => {
+        if (alive) {
+          setMissions(list);
+        }
+      },
+      () => {
+        if (alive) {
+          setMissions([]);
+        }
+      },
+    );
 
     return () => {
       alive = false;

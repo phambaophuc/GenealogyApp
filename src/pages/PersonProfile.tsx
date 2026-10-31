@@ -7,13 +7,14 @@ import PersonCard from "../components/profile/PersonCard";
 import RelationList from "../components/profile/RelationList";
 import SensitiveBlock from "../components/profile/SensitiveBlock";
 import { personRoleLabel } from "../lib/format";
-import { getPeople } from "../services/api";
+import { getPeople, toErrorMessage } from "../services/api";
 import type { Person } from "../services/types";
 
 export default function PersonProfile() {
   const { personId } = useParams();
   const [people, setPeople] = useState<Person[] | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "missing">(
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">(
     "loading",
   );
 
@@ -27,8 +28,10 @@ export default function PersonProfile() {
         setStatus(
           list.some((person) => person.id === personId) ? "ready" : "missing",
         );
-      } catch (error) {
-        console.error("Failed to load people:", error);
+      } catch (loadError) {
+        if (!alive) return;
+        setError(toErrorMessage(loadError, "Không mở được hồ sơ."));
+        setStatus("error");
       }
     }
     loadPeople();
@@ -47,6 +50,22 @@ export default function PersonProfile() {
       meta.remove();
     };
   }, [status]);
+
+  if (status === "error") {
+    return (
+      <PaperPanel className="p-8 text-center">
+        <p className="font-heading text-xl">Không mở được hồ sơ</p>
+        <p className="mt-2 text-base text-muted-foreground">{error}</p>
+        <Link
+          to="/cay-pha-he"
+          className="orn-plaque mt-4 inline-flex min-h-[44px] items-center gap-2 bg-card px-4 font-semibold"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Về cây gia phả
+        </Link>
+      </PaperPanel>
+    );
+  }
 
   if (status === "loading" || !people) {
     return (

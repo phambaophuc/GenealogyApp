@@ -34,7 +34,7 @@ export default function TreeCompleteness({ stats }: { stats: ClanStats }) {
         đánh dấu chấm than ngay trong trang hồ sơ.
       </p>
       <p className="mt-2 text-xs text-muted-foreground">
-        Ảnh chân dung trong bản mẫu dùng chữ cái đầu thay cho ảnh thật.
+        Hồ sơ chưa có ảnh chân dung sẽ dùng chữ cái đầu thay thế.
       </p>
     </PaperPanel>
   );

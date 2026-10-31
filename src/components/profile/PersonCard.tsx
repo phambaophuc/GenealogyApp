@@ -68,16 +68,6 @@ export default function PersonCard({ person }: { person: Person }) {
             <Chip tone={person.isDeceased ? "gold" : "jade"}>
               {person.isDeceased ? "Đã khuất" : "Còn sống"}
             </Chip>
-            {person.lineage === "SPOUSE" && (
-              <Chip tone="bronze">
-                {person.gender === "MALE"
-                  ? "Rể (lấy vào họ)"
-                  : "Dâu (lấy vào họ)"}
-              </Chip>
-            )}
-            {person.lineage === "OUTSIDE" && (
-              <Chip tone="bronze">Bên ngoại (khác họ)</Chip>
-            )}
             {relationKind && <Chip tone="seal">{relationKind}</Chip>}
           </div>
 

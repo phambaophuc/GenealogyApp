@@ -1,157 +1,122 @@
-import rawClan from "../data/clan.json";
-import rawMissions from "../data/missions.json";
-import { apiGet } from "./apiClient";
+import { CLAN_PROFILE } from "../config/clan";
+import {
+  apiGet,
+  apiPost,
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from "./apiClient";
+import {
+  buildPersonLinks,
+  computeGenerations,
+  emptyPersonLinks,
+  mapParentChildLinks,
+  mapSpouseLinks,
+  toPerson,
+  type PersonLinks,
+} from "./mappers";
 import type {
-  AppUser,
   ClanInfo,
   ClanStats,
-  Lineage,
+  LoginResponseDto,
   Mission,
+  Paginated,
   ParentChildLink,
   Person,
+  PersonDto,
+  PersonRelationsDto,
   SpouseLink,
+  TreeGraphDto,
   UpcomingGio,
+  UserProfileDto,
 } from "./types";
 
-const clanInfo = rawClan as unknown as ClanInfo;
-const staticMissions = rawMissions.missions as unknown as Array<
-  Omit<Mission, "tag">
->;
-
 const DAY = 24 * 60 * 60 * 1000;
+const PAGE_SIZE = 100;
 
 interface Dataset {
   people: Person[];
   byId: Map<string, Person>;
-  clanPeople: Person[];
-  users: AppUser[];
   parentLinks: ParentChildLink[];
   spouseLinks: SpouseLink[];
+  links: Map<string, PersonLinks>;
+  generations: Map<string, number>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Loading                                                                    */
+/* -------------------------------------------------------------------------- */
+
+async function fetchAllPersons(): Promise<PersonDto[]> {
+  const people: PersonDto[] = [];
+  let page = 1;
+
+  for (;;) {
+    const result = await apiGet<Paginated<PersonDto>>("/persons", {
+      page,
+      limit: PAGE_SIZE,
+      sortBy: "createdAt",
+      sortOrder: "asc",
+    });
+
+    people.push(...result.items);
+
+    if (!result.meta.hasNextPage || result.items.length === 0) break;
+    page += 1;
+  }
+
+  return people;
 }
 
 async function fetchDataset(): Promise<Dataset> {
-  const [personRows, parentRows, spouseRows, userRows] = await Promise.all([
-    apiGet("/persons"),
-    apiGet("/parent_child"),
-    apiGet("/spouses"),
-    apiGet("/users"),
+  const [personDtos, graph] = await Promise.all([
+    fetchAllPersons(),
+    apiGet<TreeGraphDto>("/tree/graph"),
   ]);
 
-  const parentLinks: ParentChildLink[] = parentRows.map((row) => ({
-    id: row.id,
-    parentId: row.parent_id,
-    childId: row.child_id,
-    kind: row.kind,
-    parentRole: row.parent_role,
-  }));
+  const active = personDtos.filter((person) => !person.deletedAt);
+  const ids = active.map((person) => person.id);
+  const links = buildPersonLinks(ids, graph);
+  const generations = computeGenerations(ids, graph);
 
-  const spouseLinks: SpouseLink[] = spouseRows.map((row) => ({
-    id: row.id,
-    personAId: row.person_a_id,
-    personBId: row.person_b_id,
-    marriageDate: row.marriage_date,
-    endDate: row.end_date,
-    endReason: row.end_reason,
-  }));
-
-  const parentsByChild = new Map<string, ParentChildLink[]>();
-  parentLinks.forEach((link) => {
-    parentsByChild.set(link.childId, [
-      ...(parentsByChild.get(link.childId) ?? []),
-      link,
-    ]);
-  });
-
-  const spouseIdsByPerson = new Map<string, string[]>();
-  spouseLinks.forEach((link) => {
-    spouseIdsByPerson.set(link.personAId, [
-      ...(spouseIdsByPerson.get(link.personAId) ?? []),
-      link.personBId,
-    ]);
-    spouseIdsByPerson.set(link.personBId, [
-      ...(spouseIdsByPerson.get(link.personBId) ?? []),
-      link.personAId,
-    ]);
-  });
-
-  const clanIds = new Set(
-    personRows.filter((row) => row.is_blood_line).map((row) => row.id),
+  const people = active.map((dto) =>
+    toPerson(
+      dto,
+      links.get(dto.id) ?? emptyPersonLinks(),
+      generations.get(dto.id) ?? 1,
+    ),
   );
-  const marriedToClan = new Set<string>();
-  spouseLinks.forEach((link) => {
-    if (clanIds.has(link.personAId)) marriedToClan.add(link.personBId);
-    if (clanIds.has(link.personBId)) marriedToClan.add(link.personAId);
-  });
-
-  const people: Person[] = personRows
-    .filter((row) => !row.deleted_at)
-    .map((row) => {
-      const parents = parentsByChild.get(row.id) ?? [];
-      const father = parents.find((link) => link.parentRole === "FATHER");
-      const mother = parents.find((link) => link.parentRole === "MOTHER");
-      const lineage: Lineage = row.is_blood_line
-        ? "CLAN"
-        : marriedToClan.has(row.id)
-          ? "SPOUSE"
-          : "OUTSIDE";
-
-      return {
-        id: row.id,
-        fullName: row.full_name,
-        commonName: row.common_name,
-        gender: row.gender,
-        avatarUrl: row.avatar_url,
-        generation: row.generation ?? 1,
-        birthOrder: row.birth_order,
-        isBloodLine: row.is_blood_line,
-        lineage,
-        birthDate: row.birth_date,
-        birthDatePrecision: row.birth_date_precision,
-        deathDate: row.death_date,
-        deathDatePrecision: row.death_date_precision,
-        deathLunarDate: row.death_lunar_date,
-        isDeceased: row.is_deceased,
-        hometown: row.hometown,
-        currentAddress: row.current_address,
-        phone: row.phone,
-        occupation: row.occupation,
-        bio: row.bio,
-        burialPlace: row.burial_place,
-        notes: row.notes,
-        fatherId: father?.parentId ?? null,
-        motherId: mother?.parentId ?? null,
-        parentKind: father?.kind ?? mother?.kind ?? null,
-        spouseIds: spouseIdsByPerson.get(row.id) ?? [],
-      };
-    });
-
-  const users: AppUser[] = userRows
-    .filter((row) => row.is_active)
-    .map((row) => ({
-      id: row.id,
-      email: row.email,
-      role: row.role,
-      personId: row.person_id,
-      isActive: row.is_active,
-      mustChangePassword: row.must_change_password,
-    }));
 
   return {
     people,
     byId: new Map(people.map((person) => [person.id, person])),
-    clanPeople: people.filter((person) => person.lineage !== "OUTSIDE"),
-    users,
-    parentLinks,
-    spouseLinks,
+    parentLinks: mapParentChildLinks(graph),
+    spouseLinks: mapSpouseLinks(graph),
+    links,
+    generations,
   };
 }
 
 let datasetRequest: Promise<Dataset> | null = null;
 
 function loadDataset(): Promise<Dataset> {
-  if (!datasetRequest) datasetRequest = fetchDataset();
+  if (!datasetRequest) {
+    datasetRequest = fetchDataset().catch((error: unknown) => {
+      datasetRequest = null;
+      throw error;
+    });
+  }
+
   return datasetRequest;
 }
+
+export function invalidateDataset(): void {
+  datasetRequest = null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Domain helpers                                                             */
+/* -------------------------------------------------------------------------- */
 
 export const isAlive = (person: Person): boolean => !person.isDeceased;
 
@@ -162,122 +127,10 @@ export function missingFields(person: Person): string[] {
   if (!person.bio) missing.push("tiểu sử");
   if (person.isDeceased && !person.deathLunarDate)
     missing.push("ngày giỗ âm lịch");
-  if (
-    person.generation > 1 &&
-    person.isBloodLine &&
-    !person.fatherId &&
-    !person.motherId
-  ) {
+  if (person.generation > 1 && !person.fatherId && !person.motherId) {
     missing.push("cha mẹ");
   }
   return missing;
-}
-
-export async function getClan(): Promise<ClanInfo> {
-  return clanInfo;
-}
-
-export async function getPeople(): Promise<Person[]> {
-  return (await loadDataset()).people;
-}
-
-export async function getClanPeople(): Promise<Person[]> {
-  return (await loadDataset()).clanPeople;
-}
-
-export async function getPersonById(id: string): Promise<Person | null> {
-  return (await loadDataset()).byId.get(id) ?? null;
-}
-
-export async function searchPeople(
-  query: string,
-  limit = 8,
-): Promise<Person[]> {
-  const trimmed = query.trim();
-  if (!trimmed) return [];
-
-  const [rows, data] = await Promise.all([
-    apiGet("/persons", { q: trimmed }),
-    loadDataset(),
-  ]);
-  return rows
-    .map((row) => data.byId.get(row.id))
-    .filter((person): person is Person => Boolean(person))
-    .slice(0, limit);
-}
-
-export async function getParents(id: string): Promise<{
-  father: Person | null;
-  mother: Person | null;
-}> {
-  const data = await loadDataset();
-  const links = data.parentLinks.filter((link) => link.childId === id);
-  const byRole = (role: "FATHER" | "MOTHER") => {
-    const link = links.find((item) => item.parentRole === role);
-    return link ? (data.byId.get(link.parentId) ?? null) : null;
-  };
-  return { father: byRole("FATHER"), mother: byRole("MOTHER") };
-}
-
-export async function getChildren(id: string): Promise<Person[]> {
-  const data = await loadDataset();
-  const childIds = new Set(
-    data.parentLinks
-      .filter((link) => link.parentId === id)
-      .map((link) => link.childId),
-  );
-  return data.people.filter((person) => childIds.has(person.id));
-}
-
-export async function getSpouseLinks(id: string): Promise<SpouseLink[]> {
-  const data = await loadDataset();
-  return data.spouseLinks.filter(
-    (link) => link.personAId === id || link.personBId === id,
-  );
-}
-
-export async function getUsers(): Promise<AppUser[]> {
-  return (await loadDataset()).users;
-}
-
-export async function getDemoUserPerson(): Promise<Person | null> {
-  const data = await loadDataset();
-  const account = data.users.find(
-    (user) => user.role === "MEMBER" && user.personId,
-  );
-  return account?.personId ? (data.byId.get(account.personId) ?? null) : null;
-}
-
-export async function getClanStats(): Promise<ClanStats> {
-  const data = await loadDataset();
-  const people = data.clanPeople;
-  const deceased = people.filter((person) => person.isDeceased).length;
-  const generations = people.reduce(
-    (max, person) => Math.max(max, person.generation),
-    1,
-  );
-  const checks = people.reduce(
-    (total, person) =>
-      total +
-      3 +
-      (person.generation > 1 && person.isBloodLine ? 1 : 0) +
-      (person.isDeceased ? 1 : 0),
-    0,
-  );
-  const missingInfo = people.reduce(
-    (total, person) => total + missingFields(person).length,
-    0,
-  );
-
-  return {
-    total: people.length,
-    generations,
-    deceased,
-    living: people.length - deceased,
-    outsideClan: data.people.length - people.length,
-    missingInfo,
-    completeness: Math.round(((checks - missingInfo) / checks) * 100),
-  };
 }
 
 export function nextGioDate(deathLunarDate: string, from = new Date()): Date {
@@ -291,12 +144,142 @@ export function nextGioDate(deathLunarDate: string, from = new Date()): Date {
   return next;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Clan                                                                       */
+/* -------------------------------------------------------------------------- */
+
+export async function getClan(): Promise<ClanInfo> {
+  return CLAN_PROFILE;
+}
+
+/* -------------------------------------------------------------------------- */
+/* People                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export async function getPeople(): Promise<Person[]> {
+  return (await loadDataset()).people;
+}
+
+export async function getClanPeople(): Promise<Person[]> {
+  return (await loadDataset()).people;
+}
+
+export async function getPersonById(id: string): Promise<Person | null> {
+  return (await loadDataset()).byId.get(id) ?? null;
+}
+
+export async function searchPeople(
+  query: string,
+  limit = 8,
+): Promise<Person[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const [result, data] = await Promise.all([
+    apiGet<Paginated<PersonDto>>("/persons", {
+      search: trimmed,
+      page: 1,
+      limit,
+      sortBy: "fullName",
+      sortOrder: "asc",
+    }),
+    loadDataset(),
+  ]);
+
+  return result.items
+    .map((row) => {
+      const known = data.byId.get(row.id);
+      if (known) return known;
+
+      return toPerson(
+        row,
+        data.links.get(row.id) ?? emptyPersonLinks(),
+        data.generations.get(row.id) ?? 1,
+      );
+    })
+    .slice(0, limit);
+}
+
+export async function getPersonRelations(
+  id: string,
+): Promise<PersonRelationsDto> {
+  return apiGet<PersonRelationsDto>(`/persons/${id}/relations`);
+}
+
+export async function getParents(id: string): Promise<{
+  father: Person | null;
+  mother: Person | null;
+}> {
+  const data = await loadDataset();
+  const links = data.parentLinks.filter((link) => link.childId === id);
+
+  const byRole = (role: "FATHER" | "MOTHER") => {
+    const link = links.find((item) => item.parentRole === role);
+    return link ? (data.byId.get(link.parentId) ?? null) : null;
+  };
+
+  return { father: byRole("FATHER"), mother: byRole("MOTHER") };
+}
+
+export async function getChildren(id: string): Promise<Person[]> {
+  const data = await loadDataset();
+  const childIds = new Set(
+    data.parentLinks
+      .filter((link) => link.parentId === id)
+      .map((link) => link.childId),
+  );
+
+  return data.people.filter((person) => childIds.has(person.id));
+}
+
+export async function getSpouseLinks(id: string): Promise<SpouseLink[]> {
+  const data = await loadDataset();
+  return data.spouseLinks.filter(
+    (link) => link.personAId === id || link.personBId === id,
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stats, giỗ and missions                                                    */
+/* -------------------------------------------------------------------------- */
+
+export async function getClanStats(): Promise<ClanStats> {
+  const data = await loadDataset();
+  const people = data.people;
+  const deceased = people.filter((person) => person.isDeceased).length;
+  const generations =
+    people.length === 0
+      ? 0
+      : people.reduce((max, person) => Math.max(max, person.generation), 1);
+
+  const checks = people.reduce(
+    (total, person) =>
+      total + 3 + (person.generation > 1 ? 1 : 0) + (person.isDeceased ? 1 : 0),
+    0,
+  );
+
+  const missingInfo = people.reduce(
+    (total, person) => total + missingFields(person).length,
+    0,
+  );
+
+  return {
+    total: people.length,
+    generations,
+    deceased,
+    living: people.length - deceased,
+    missingInfo,
+    completeness:
+      checks === 0 ? 100 : Math.round(((checks - missingInfo) / checks) * 100),
+  };
+}
+
 export async function getUpcomingGio(limit = 3): Promise<UpcomingGio[]> {
   const data = await loadDataset();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return data.clanPeople
+  return data.people
     .filter((person) => person.isDeceased && person.deathLunarDate)
     .map((person) => {
       const next = nextGioDate(person.deathLunarDate as string, today);
@@ -311,7 +294,10 @@ export async function getUpcomingGio(limit = 3): Promise<UpcomingGio[]> {
 }
 
 export async function getTodayMissions(): Promise<Mission[]> {
-  const upcoming = await getUpcomingGio(1);
+  const [upcoming, stats] = await Promise.all([
+    getUpcomingGio(1),
+    getClanStats(),
+  ]);
   const missions: Mission[] = [];
 
   if (upcoming.length > 0) {
@@ -321,15 +307,29 @@ export async function getTodayMissions(): Promise<Mission[]> {
       label: `Dâng hương ngày giỗ ${person.gender === "FEMALE" ? "cụ bà" : "cụ ông"} ${person.fullName}`,
       hint:
         daysLeft === 0
-          ? `Hôm nay là ngày giỗ — mời con cháu ${clanInfo.village.split(",")[0]} về từ đường.`
+          ? `Hôm nay là ngày giỗ — mời con cháu ${CLAN_PROFILE.village.split(",")[0]} về từ đường.`
           : `Còn ${daysLeft} ngày — ngày giỗ ${person.deathLunarDate} âm lịch ghi trong phả.`,
       tag: "gio",
     });
   }
 
-  staticMissions.forEach((mission) => {
-    missions.push({ ...mission, tag: "chung" });
-  });
+  if (stats.missingInfo > 0) {
+    missions.push({
+      id: "m-bo-sung-thong-tin",
+      label: `Bổ sung ${stats.missingInfo} lượt thông tin còn thiếu`,
+      hint: "Mở hồ sơ có dấu chấm than và ghi thêm ngày sinh, quê quán, tiểu sử…",
+      tag: "chung",
+    });
+  }
+
+  if (stats.total > 0) {
+    missions.push({
+      id: "m-xem-cay-pha-he",
+      label: "Xem lại cây phả hệ",
+      hint: `Dòng họ hiện có ${stats.total} người trải qua ${stats.generations} đời.`,
+      tag: "chung",
+    });
+  }
 
   return missions;
 }
@@ -339,7 +339,8 @@ export async function getGenerationCounts(): Promise<
 > {
   const data = await loadDataset();
   const counts = new Map<number, number>();
-  data.clanPeople.forEach((person) =>
+
+  data.people.forEach((person) =>
     counts.set(person.generation, (counts.get(person.generation) ?? 0) + 1),
   );
 
@@ -347,3 +348,43 @@ export async function getGenerationCounts(): Promise<
     .map(([generation, count]) => ({ generation, count }))
     .sort((a, b) => a.generation - b.generation);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Auth                                                                       */
+/* -------------------------------------------------------------------------- */
+
+export async function login(
+  email: string,
+  password: string,
+): Promise<LoginResponseDto> {
+  const result = await apiPost<LoginResponseDto>(
+    "/auth/login",
+    { email, password },
+    { auth: false },
+  );
+  invalidateDataset();
+  setAccessToken(result.accessToken);
+  return result;
+}
+
+export async function getCurrentUser(): Promise<UserProfileDto> {
+  return apiGet<UserProfileDto>("/auth/me");
+}
+
+export function logout(): void {
+  clearAccessToken();
+  invalidateDataset();
+}
+
+export function isAuthenticated(): boolean {
+  return Boolean(getAccessToken());
+}
+
+export {
+  ApiError,
+  clearAccessToken,
+  getAccessToken,
+  isApiError,
+  setAccessToken,
+  toErrorMessage,
+} from "./apiClient";

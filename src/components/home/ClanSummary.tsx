@@ -38,13 +38,6 @@ export default function ClanSummary({
         <StatChip value={stats.living} label="người còn sống" />
       </div>
 
-      {stats.outsideClan > 0 && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          Ngoài ra còn {stats.outsideClan} người bên ngoại (ông bà ngoại, thông
-          gia) đã ghi trong phả.
-        </p>
-      )}
-
       <div className="mt-4 rounded-xl border-2 border-wood/25 bg-card/70 p-3.5">
         <p className="flex items-center gap-2 font-heading text-base font-semibold">
           <Flame className="h-4 w-4 text-seal" aria-hidden="true" />
@@ -52,7 +45,7 @@ export default function ClanSummary({
         </p>
         {upcoming.length === 0 ? (
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Chưa có ngày giỗ nào trong dữ liệu mẫu.
+            Chưa có ngày giỗ nào trong phả.
           </p>
         ) : (
           <ul className="mt-2 space-y-1.5 text-sm">

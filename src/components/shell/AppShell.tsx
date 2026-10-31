@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { ScrollText } from "lucide-react";
 import { usePrefs } from "../../hooks/usePrefs";
-import { getClan } from "../../services/api";
+import { getClan, isAuthenticated, logout } from "../../services/api";
 import type { ClanInfo } from "../../services/types";
 import ClanEmblem from "../ornaments/ClanEmblem";
 import GameControls from "./GameControls";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 
 export default function AppShell() {
   const { simpleUI } = usePrefs();
+  const navigate = useNavigate();
   const [clan, setClan] = useState<ClanInfo | null>(null);
 
   useEffect(() => {
@@ -21,6 +22,20 @@ export default function AppShell() {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    const onUnauthorized = () => {
+      logout();
+      navigate("/", { replace: true });
+    };
+    window.addEventListener("giapha:unauthorized", onUnauthorized);
+    return () =>
+      window.removeEventListener("giapha:unauthorized", onUnauthorized);
+  }, [navigate]);
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <MotionConfig reducedMotion={simpleUI ? "always" : "user"}>
@@ -43,6 +58,7 @@ export default function AppShell() {
             </div>
             <Link
               to="/"
+              onClick={() => logout()}
               className="orn-plaque flex min-h-[44px] shrink-0 items-center gap-2 bg-card px-3 text-sm font-semibold text-foreground"
             >
               <ScrollText className="h-4 w-4" aria-hidden="true" />

@@ -9,18 +9,36 @@ import SealStamp from "../components/ornaments/SealStamp";
 import { usePrefs } from "../hooks/usePrefs";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { CLAN_PROFILE } from "../config/clan";
+import { login, toErrorMessage } from "../services/api";
 
 export default function Gate() {
   const navigate = useNavigate();
   const { simpleUI } = usePrefs();
-  const [account, setAccount] = useState("");
-  const [password, setPassword] = useState("");
+  const [account, setAccount] = useState(
+    import.meta.env.VITE_DEMO_EMAIL ?? "admin@example.com",
+  );
+  const [password, setPassword] = useState(
+    import.meta.env.VITE_DEMO_PASSWORD ?? "",
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
-  const enter = (event: React.FormEvent) => {
+  const enter = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLeaving(true);
-    window.setTimeout(() => navigate("/ban-do"), simpleUI ? 0 : 700);
+    setError(null);
+    setBusy(true);
+
+    try {
+      await login(account.trim(), password);
+      setLeaving(true);
+      window.setTimeout(() => navigate("/ban-do"), simpleUI ? 0 : 700);
+    } catch (loginError) {
+      setError(toErrorMessage(loginError, "Không đăng nhập được."));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -50,7 +68,7 @@ export default function Gate() {
               Gia phả số dòng họ
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Làng Cổ Điền, Vũ Thư, Thái Bình · Bắc Bộ
+              {CLAN_PROFILE.village} · {CLAN_PROFILE.region}
             </p>
           </div>
 
@@ -63,7 +81,7 @@ export default function Gate() {
                 id="account"
                 value={account}
                 onChange={(event) => setAccount(event.target.value)}
-                placeholder="conchau"
+                placeholder="admin@example.com"
                 autoComplete="username"
                 className="min-h-[48px] border-2 border-wood/40 bg-card text-base"
               />
@@ -84,19 +102,30 @@ export default function Gate() {
               />
             </div>
 
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl border-2 border-seal/50 bg-seal/10 px-3 py-2 text-sm font-medium text-seal"
+              >
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="orn-plaque flex min-h-[56px] w-full items-center justify-center gap-2 bg-primary px-4 text-lg font-semibold text-primary-foreground"
+              disabled={busy}
+              className="orn-plaque flex min-h-[56px] w-full items-center justify-center gap-2 bg-primary px-4 text-lg font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
               <DoorOpen className="h-5 w-5" aria-hidden="true" />
-              Vào làng
+              {busy ? "Đang mở cổng…" : "Vào làng"}
             </button>
           </form>
 
           <div className="mt-5 flex flex-col items-center gap-2 text-center">
             <SealStamp label="Bản demo giao diện" />
             <p className="text-sm text-muted-foreground">
-              Không cần tài khoản thật — bấm “Vào làng” là vào thẳng trang chủ.
+              Đăng nhập bằng tài khoản demo của API (mặc định:
+              admin@example.com).
             </p>
           </div>
         </PaperPanel>

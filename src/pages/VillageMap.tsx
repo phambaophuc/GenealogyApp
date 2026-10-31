@@ -11,7 +11,7 @@ import VillageScene from "../components/map/VillageScene";
 import DrumPattern from "../components/ornaments/DrumPattern";
 import PaperPanel from "../components/ornaments/PaperPanel";
 import { usePrefs } from "../hooks/usePrefs";
-import { getClan, getClanStats, getUpcomingGio } from "../services/api";
+import { getClan, getClanStats, getUpcomingGio, toErrorMessage } from "../services/api";
 import type {
   ClanInfo,
   ClanStats,
@@ -25,6 +25,7 @@ export default function VillageMap() {
   const [clan, setClan] = useState<ClanInfo | null>(null);
   const [stats, setStats] = useState<ClanStats | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingGio[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<VillageDoor | null>(null);
 
   useEffect(() => {
@@ -36,11 +37,24 @@ export default function VillageMap() {
         setStats(clanStats);
         setUpcoming(gioList);
       },
+      (loadError: unknown) => {
+        if (!alive) return;
+        setError(toErrorMessage(loadError, "Không mở được sổ phả hệ."));
+      },
     );
     return () => {
       alive = false;
     };
   }, []);
+
+  if (error) {
+    return (
+      <PaperPanel className="p-8 text-center">
+        <p className="font-heading text-xl">Không mở được sổ phả hệ</p>
+        <p className="mt-2 text-base text-muted-foreground">{error}</p>
+      </PaperPanel>
+    );
+  }
 
   if (!clan || !stats) {
     return (

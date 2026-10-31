@@ -1,68 +1,175 @@
 import type { ComponentType } from "react";
 
+/* -------------------------------------------------------------------------- */
+/* Shared enums (mirror the backend's genealogy.enums.ts)                     */
+/* -------------------------------------------------------------------------- */
+
 export type Gender = "MALE" | "FEMALE" | "OTHER" | "UNKNOWN";
 export type DatePrecision = "FULL" | "YEAR" | "APPROX";
 export type ParentRole = "FATHER" | "MOTHER";
 export type ParentKind = "BIOLOGICAL" | "ADOPTED" | "STEP";
 export type MarriageEndReason = "DIVORCED" | "WIDOWED";
-export type UserRole = "ADMIN" | "MEMBER";
-export type Lineage = "CLAN" | "SPOUSE" | "OUTSIDE";
+export type UserRole = "admin" | "user";
 
-export interface DbPerson {
+/* -------------------------------------------------------------------------- */
+/* API envelope                                                               */
+/* -------------------------------------------------------------------------- */
+
+export interface ApiErrorBody {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+export interface ApiSuccessResponse<T> {
+  success: true;
+  data: T;
+  requestId: string | null;
+  timestamp: string;
+}
+
+export interface ApiErrorResponse {
+  success: false;
+  error: ApiErrorBody;
+  requestId: string | null;
+  path: string;
+  method: string;
+  timestamp: string;
+}
+
+export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+export interface PageMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  meta: PageMeta;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Backend DTOs                                                               */
+/* -------------------------------------------------------------------------- */
+
+export interface PersonDto {
   id: string;
-  full_name: string;
-  common_name: string | null;
+  fullName: string;
+  commonName: string | null;
   gender: Gender;
-  avatar_url: string | null;
-  generation: number | null;
-  birth_order: number | null;
-  is_blood_line: boolean;
-  birth_date: string | null;
-  birth_date_precision: DatePrecision | null;
-  death_date: string | null;
-  death_date_precision: DatePrecision | null;
-  death_lunar_date: string | null;
-  is_deceased: boolean;
+  avatarUrl: string | null;
+  birthOrder: number | null;
+  birthDate: string | null;
+  birthDatePrecision: DatePrecision | null;
+  deathDate: string | null;
+  deathDatePrecision: DatePrecision | null;
+  deathLunarDate: string | null;
+  isDeceased: boolean;
   hometown: string | null;
-  current_address: string | null;
+  currentAddress: string | null;
   phone: string | null;
   occupation: string | null;
   bio: string | null;
-  burial_place: string | null;
+  burialPlace: string | null;
   notes: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
-export interface DbParentChild {
+export interface PersonSummaryDto {
   id: string;
-  parent_id: string;
-  child_id: string;
+  fullName: string;
+  commonName: string | null;
+  gender: Gender;
+  birthDate: string | null;
+  deathDate: string | null;
+  isDeceased: boolean;
+  avatarUrl: string | null;
+}
+
+export interface PersonParentLinkDto {
+  person: PersonSummaryDto;
+  parentRole: ParentRole;
   kind: ParentKind;
-  parent_role: ParentRole;
 }
 
-export interface DbSpouse {
+export interface PersonChildLinkDto {
+  person: PersonSummaryDto;
+  parentRole: ParentRole;
+  kind: ParentKind;
+}
+
+export interface PersonSpouseLinkDto {
+  person: PersonSummaryDto;
+  marriageDate: string | null;
+  endDate: string | null;
+  endReason: MarriageEndReason | null;
+}
+
+export interface PersonRelationsDto {
+  person: PersonSummaryDto;
+  parents: PersonParentLinkDto[];
+  children: PersonChildLinkDto[];
+  spouses: PersonSpouseLinkDto[];
+}
+
+export interface TreePersonDto {
   id: string;
-  person_a_id: string;
-  person_b_id: string;
-  marriage_date: string | null;
-  end_date: string | null;
-  end_reason: MarriageEndReason | null;
+  fullName: string;
+  commonName: string | null;
+  gender: Gender;
+  birthYear: number | null;
+  deathYear: number | null;
+  isDeceased: boolean;
+  birthOrder: number | null;
+  avatarUrl: string | null;
 }
 
-export interface DbUser {
+export interface TreeParentChildDto {
+  id: string;
+  parentId: string;
+  childId: string;
+  parentRole: ParentRole;
+  kind: ParentKind;
+}
+
+export interface TreeSpouseDto {
+  id: string;
+  personAId: string;
+  personBId: string;
+  marriageDate: string | null;
+  endReason: MarriageEndReason | null;
+}
+
+export interface TreeGraphDto {
+  persons: TreePersonDto[];
+  parentChild: TreeParentChildDto[];
+  spouses: TreeSpouseDto[];
+}
+
+export interface UserProfileDto {
   id: string;
   email: string;
-  password_hash: string;
-  role: UserRole;
-  person_id: string | null;
-  is_active: boolean;
-  must_change_password: boolean;
-  created_at: string;
-  updated_at: string;
+  name?: string;
+  roles: UserRole[];
 }
+
+export interface LoginResponseDto {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: string;
+  user: UserProfileDto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Domain models used by the UI                                               */
+/* -------------------------------------------------------------------------- */
 
 export interface ParentChildLink {
   id: string;
@@ -89,8 +196,6 @@ export interface Person {
   avatarUrl: string | null;
   generation: number;
   birthOrder: number | null;
-  isBloodLine: boolean;
-  lineage: Lineage;
   birthDate: string | null;
   birthDatePrecision: DatePrecision | null;
   deathDate: string | null;
@@ -108,15 +213,6 @@ export interface Person {
   motherId: string | null;
   parentKind: ParentKind | null;
   spouseIds: string[];
-}
-
-export interface AppUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  personId: string | null;
-  isActive: boolean;
-  mustChangePassword: boolean;
 }
 
 export interface VillageDoor {
@@ -151,7 +247,6 @@ export interface ClanStats {
   generations: number;
   deceased: number;
   living: number;
-  outsideClan: number;
   missingInfo: number;
   completeness: number;
 }
