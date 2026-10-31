@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import FocusTree from "../components/focus/FocusTree";
@@ -17,6 +17,8 @@ export default function TreePage() {
   const [trail, setTrail] = useState<string[]>([]);
   const [cursor, setCursor] = useState(0);
 
+  const initialTarget = useRef<string | null>(readTarget());
+
   useEffect(() => {
     let alive = true;
 
@@ -26,7 +28,7 @@ export default function TreePage() {
         setPeople(list);
         setClanPeople(clan);
 
-        const target = readTarget();
+        const target = initialTarget.current;
         const found = target
           ? list.find((person) => person.id === target)
           : undefined;
@@ -51,12 +53,13 @@ export default function TreePage() {
   );
 
   useEffect(() => {
+    if (!people) return;
     window.history.replaceState(
       null,
       "",
       centerId ? `/cay-pha-he?tam=${centerId}` : "/cay-pha-he",
     );
-  }, [centerId]);
+  }, [people, centerId]);
 
   const openPerson = (id: string) => {
     if (!id) return;
